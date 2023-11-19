@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    .tableContainer {
+      text-align: center;
+      display: inline-block;
+      margin: 10px;
+    }
+
+    .tableImage {
+      width: 200px;
+      height: 200px;
+      transition: background-color 0.5s ease;
+    }
+
+    .button {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .stopwatch {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBRPzZv-VqL4-JC1A9b_Jl_Ns0BgJw-3j0",
+      authDomain: "occupancy-ad487.firebaseapp.com",
+      projectId: "occupancy-ad487",
+      storageBucket: "occupancy-ad487.appspot.com",
+      messagingSenderId: "732146767779",
+      appId: "1:732146767779:web:e80d53434d22dc56082c16"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let tableStates = [];
+
+    function initializeTables() {
+      for (let i = 0; i < 9; i++) {
+        tableStates[i] = {
+          isGreen: false,
+          stopwatch: null,
+        };
+
+        // Fetch initial state from the database
+        database.ref(`tables/${i}`).on('value', (snapshot) => {
+          const state = snapshot.val();
+          if (state) {
+            tableStates[i] = state;
+            updateTableUI(i);
+          }
+        });
+      }
+    }
+
+    function toggleTable(tableIndex) {
+      const tableState = tableStates[tableIndex];
+      const tableImage = document.getElementById(`tableImage${tableIndex}`);
+      const button = document.getElementById(`button${tableIndex}`);
+      const stopwatchElement = document.getElementById(`stopwatch${tableIndex}`);
+
+      if (tableState.isGreen) {
+        // Reset stopwatch
+        clearInterval(tableState.stopwatch);
+        stopwatchElement.innerText = '00:00:00';
+        // Change image back to default
+        tableImage.src = '1.png'; // Replace with your default image path
+        button.innerText = `Table ${tableIndex + 1}`;
+        tableState.isGreen = false;
+      } else {
+        // Start stopwatch
+        let seconds = 0;
+        tableState.stopwatch = setInterval(function () {
+          seconds++;
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          const remainingSeconds = seconds % 60;
+          stopwatchElement.innerText = `${hours}:${minutes}:${remainingSeconds}`;
+        }, 1000);
+        // Change image to the green version
+        tableImage.src = '2.png'; // Replace with your green image path
+        button.innerText = ` Table ${tableIndex + 1}`;
+        tableState.isGreen = true;
+      }
+
+      // Update the database
+      database.ref(`tables/${tableIndex}`).set(tableState);
+    }
+
+    function updateTableUI(tableIndex) {
+      const tableState = tableStates[tableIndex];
+      const tableImage = document.getElementById(`tableImage${tableIndex}`);
+      const button = document.getElementById(`button${tableIndex}`);
+      const stopwatchElement = document.getElementById(`stopwatch${tableIndex}`);
+
+      // Update UI based on table state
+      if (tableState.isGreen) {
+        // ... (existing green state UI update)
+        tableImage.src = '2.png'; // Replace with your green image path
+        button.innerText = ` Table ${tableIndex + 1}`;
+      } else {
+        // ... (existing default state UI update)
+        tableImage.src = '1.png'; // Replace with your default image path
+        button.innerText = `Table ${tableIndex + 1}`;
+      }
+    }
+  </script>
+</head>
+<body onload="initializeTables()">
+
+  <div id="tablesContainer">
+    <!-- Create a 3x3 grid of tables -->
+    <div class="tableContainer">
+      <img id="tableImage0" class="tableImage" src="1.png" alt="Table Image">
+      <div id="stopwatch0" class="stopwatch">00:00:00</div>
+      <button id="button0" class="button" onclick="toggleTable(0)">Table 1</button>
+    </div>
+
+    <div class="tableContainer">
+      <img id="tableImage1" class="tableImage" src="1.png" alt="Table Image">
+      <div id="stopwatch1" class="stopwatch">00:00:00</div>
+      <button id="button1" class="button" onclick="toggleTable(1)">Table 2</button>
+    </div>
+
+    <div class="tableContainer">
+      <img id="tableImage2" class="tableImage" src="1.png" alt="Table Image">
+      <div id="stopwatch2" class="stopwatch">00:00:00</div>
+      <button id="button2" class="button" onclick="toggleTable(2)">Table 3</button>
+    </div>
+
+    <!-- Repeat the above block for the remaining rows (3-8) -->
+
+  </div>
+
+</body>
+</html>
